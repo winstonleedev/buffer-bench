@@ -1,0 +1,3 @@
+/c/Code/flatbuffers-bench/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/c/Code/flatbuffers-bench/cmake-build-debug/CMakeFiles/flatbuffers_bench.dir
+/c/Code/flatbuffers-bench/cmake-build-debug/CMakeFiles/edit_cache.dir
