@@ -33,3 +33,7 @@
 
 cmake-build-debug
 .idea
+
+# Visual studio
+.vs
+out
