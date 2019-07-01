@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 project(flatbuffers_bench)
 
 set(CMAKE_CXX_STANDARD 17)
-add_definitions("-DGRPC_USE_PROTO_LITE")
+# set(_PROTOBUF_LIBPROTOBUF libprotobuf)
+set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
+# add_definitions("-DGRPC_USE_PROTO_LITE")
 
 # GRPC and Protocol Buffers libraries location
 list(APPEND CMAKE_PREFIX_PATH "/opt/grpc" "/opt/protobuf")
@@ -40,13 +42,11 @@ add_executable(${PROJECT_NAME}
 )
 target_include_directories(${PROJECT_NAME}
         PUBLIC
-        # "${CMAKE_CURRENT_SOURCE_DIR}/protobuf"
-        # "${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer"
-        # "${CMAKE_CURRENT_SOURCE_DIR}/raw"
         ${CMAKE_CURRENT_BINARY_DIR}
+        ${GRPC_INCLUDE_DIR}
 )
 target_link_libraries(${PROJECT_NAME}
         ${ZLIB_LIBRARIES}
         ${Protobuf_LIBRARIES}
-        ${GRPC_LIBRARIES}
+        ${_GRPC_GRPCPP_UNSECURE}
 )
