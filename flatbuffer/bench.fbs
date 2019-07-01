@@ -21,14 +21,18 @@ namespace benchfb;
 
 enum Enum : short { Apples, Pears, Bananas }
 
-struct Foo {
+table ID {
+  id: ulong;
+}
+
+table Foo {
   id:ulong;
   count:short;
   prefix:byte;
   length:uint;
 }
 
-struct Bar {
+table Bar {
   parent:Foo;
   time:int;
   ratio:float;
@@ -50,4 +54,11 @@ table FooBarContainer {
 }
 
 root_type FooBarContainer;
+
+rpc_service FooBarService {
+    GetFoo(ID):Foo;
+    GetBar(ID):Bar;
+    GetFooBar(ID):FooBar;
+    GetFooBarContainer(ID):FooBarContainer;
+}
 

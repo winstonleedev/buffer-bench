@@ -16,11 +16,10 @@ struct FBBench : Bench {
         for (int i = 0; i < veclen; i++) {
             // We add + i to not make these identical copies for a more realistic
             // compression test.
-            auto foo = Foo(0xABADCAFEABADCAFE + i, 10000 + i, '@' + i, 1000000 + i);
-            auto bar = Bar(foo, 123456 + i, 3.14159f + i, 10000 + i);
+            auto foo = CreateFoo(fbb, 0xABADCAFEABADCAFE + i, 10000 + i, '@' + i, 1000000 + i);
+            auto bar = CreateBar(fbb, foo, 123456 + i, 3.14159f + i, 10000 + i);
             auto name = fbb.CreateString("Hello, World!");
-            auto foobar = CreateFooBar(fbb, &bar, name, 3.1415432432445543543 + i,
-                                       '!' + i);
+            auto foobar = CreateFooBar(fbb, bar.o, name, 3.1415432432445543543 + i, i);
             vec[i] = foobar;
         }
         auto location = fbb.CreateString("http://google.com/flatbuffers/");
@@ -50,11 +49,11 @@ struct FBBench : Bench {
             Add(static_cast<int64_t>(bar->ratio()));
             Add(bar->size());
             Add(bar->time());
-            auto &foo = bar->parent();
-            Add(foo.count());
-            Add(foo.id());
-            Add(foo.length());
-            Add(foo.prefix());
+            auto foo = bar->parent();
+            Add(foo->count());
+            Add(foo->id());
+            Add(foo->length());
+            Add(foo->prefix());
         }
         return sum;
     }

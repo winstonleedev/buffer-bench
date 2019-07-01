@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(flatbuffers_bench)
+project(buffer-bench)
 
 set(CMAKE_CXX_STANDARD 17)
 # set(_PROTOBUF_LIBPROTOBUF libprotobuf)
@@ -30,8 +30,8 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTOS})
 grpc_generate_cpp(GRPC_SRCS GRPC_HDRS ${CMAKE_CURRENT_BINARY_DIR} ${PROTOS})
 compile_flatbuffers_schema_to_cpp(${FLATPROTOS} ${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(${PROJECT_NAME}
-        main.cpp
+add_executable(${PROJECT_NAME}-client
+        client.cpp
         flatbuffer/FBBench.cpp
         flatbuffer/bench_generated.h
         protobuf/benchpb.cpp
@@ -39,14 +39,35 @@ add_executable(${PROJECT_NAME}
         ${GRPC_SRCS}
         bench.h
         raw/benchraw.cpp
-)
-target_include_directories(${PROJECT_NAME}
+        config.h)
+target_include_directories(${PROJECT_NAME}-client
         PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}
         ${GRPC_INCLUDE_DIR}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}-client
         ${ZLIB_LIBRARIES}
         ${Protobuf_LIBRARIES}
         ${_GRPC_GRPCPP_UNSECURE}
 )
+
+add_executable(${PROJECT_NAME}-server
+        client.cpp
+        flatbuffer/FBBench.cpp
+        flatbuffer/bench_generated.h
+        protobuf/benchpb.cpp
+        ${PROTO_SRCS}
+        ${GRPC_SRCS}
+        bench.h
+        raw/benchraw.cpp
+        config.h)
+target_include_directories(${PROJECT_NAME}-server
+        PUBLIC
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${GRPC_INCLUDE_DIR}
+        )
+target_link_libraries(${PROJECT_NAME}-server
+        ${ZLIB_LIBRARIES}
+        ${Protobuf_LIBRARIES}
+        ${_GRPC_GRPCPP_UNSECURE}
+        )

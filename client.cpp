@@ -1,19 +1,18 @@
 #include <iostream>
 #include <assert.h>
 #include "bench.h"
+#include "config.h"
 #include <chrono>
 #include <zconf.h>
 #include <zlib.h>
 
 std::chrono::time_point<std::chrono::system_clock> end, start;
 
-void InitTime()
-{
+void InitTime() {
     start = std::chrono::system_clock::now();
 }
 
-double SecondsSinceStart()
-{
+double SecondsSinceStart() {
     end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
     return diff.count();
@@ -22,7 +21,7 @@ double SecondsSinceStart()
 size_t DeflateTest(void *buf, size_t len) {
     auto outbuf = malloc(len * 2);
     uLongf size;
-    auto err = compress((Bytef *)outbuf, &size, (Bytef *)buf, (uLong)len);
+    auto err = compress((Bytef *) outbuf, &size, (Bytef *) buf, (uLong) len);
     assert(err == Z_OK);
     free(outbuf);
     return size;
@@ -33,10 +32,10 @@ void Run(Bench *bench, const char *name) {
 
     printf("=================================\n");
 
-    const size_t bufsize = 10000;
+    const size_t bufsize = BUFSIZE;
     char buf[bufsize];
     size_t len = bufsize;
-    const int iterations = 1000;
+    const int iterations = ITERATIONS;
     void *decoded[iterations];
 
     printf("%s bench start...\n", name);
@@ -47,7 +46,7 @@ void Run(Bench *bench, const char *name) {
     // puts so much strain on the allocator that use of free() dwarfs all
     // timings. Running the benchmark in batches gives more realistic timings and
     // keeps it accurate
-    for (int j = 0; j < 1000; j++) {
+    for (int j = 0; j < ITERATIONS_OUTER; j++) {
 
         InitTime();
 
@@ -57,39 +56,22 @@ void Run(Bench *bench, const char *name) {
             bench->Encode(buf, len);
         }
         double time2 = SecondsSinceStart();
-#ifdef _CRTDBG_MAP_ALLOC
-        _CrtMemState ms1;
-      _CrtMemCheckpoint(&ms1);
-#endif
+
         double time3 = SecondsSinceStart();
-        for (auto & i : decoded) {
+        for (auto &i : decoded) {
             i = bench->Decode(buf, len);
         }
         double time4 = SecondsSinceStart();
-#ifdef _CRTDBG_MAP_ALLOC
-        _CrtMemState ms2;
-      _CrtMemCheckpoint(&ms2);
-      _CrtMemState msdiff;
-      _CrtMemDifference(&msdiff, &ms1, &ms2);
-      // This shows the amount of bytes & blocks needed for a decode,
-      // also transient memory in totalcount
-      if (!j) _CrtMemDumpStatistics(&msdiff);
-#endif
-        /*
-        PROCESS_MEMORY_COUNTERS pmc = { sizeof(PROCESS_MEMORY_COUNTERS) };
-        auto ok = GetProcessMemoryInfo(GetCurrentProcess(), &pmc,
-                                       sizeof(PROCESS_MEMORY_COUNTERS));
-        assert(ok);
-        */
+
         double time5 = SecondsSinceStart();
-        for (auto & i : decoded) {
+        for (auto &i : decoded) {
             auto result = bench->Use(i);
-            //printf("\n");
+
             assert(result == 218812692406581874);
             total += result;
         }
         double time6 = SecondsSinceStart();
-        for (auto & i : decoded) {
+        for (auto &i : decoded) {
             bench->Dealloc(i);
         }
         double time7 = SecondsSinceStart();
@@ -105,7 +87,6 @@ void Run(Bench *bench, const char *name) {
     printf("* %f encode time, %f decode time\n", encode, decode);
     printf("* %f use time, %f dealloc time\n", use, dealloc);
     printf("* %f decode/use/dealloc\n", decode + use + dealloc);
-    //printf("* %d K paged pool\n", pmc.PagefileUsage / 1024);
 
     bench->ShutDown();
     delete bench;
@@ -117,7 +98,8 @@ int main() {
     std::cout << "Hello, World!" << std::endl;
     // Bench *NewRAWBench();  Run(NewRAWBench(),  "Raw structs");
     // Bench *NewFBBench();   Run(NewFBBench(),   "FlatBuffers");
-    Bench *NewPBBench();   Run(NewPBBench(),   "Protocol Buffers LITE");
+    Bench *NewPBBench();
+    Run(NewPBBench(), "Protocol Buffers LITE");
 
     // getchar();
     return 0;

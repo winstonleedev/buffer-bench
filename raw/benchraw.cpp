@@ -50,7 +50,7 @@ struct FooBarContainer {
 
 struct RAWBench : Bench {
     void Encode(void *buf, size_t &len) {
-        FooBarContainer fbc;
+        FooBarContainer fbc{};
         strcpy(fbc.location, "http://google.com/flatbuffers/");  // Unsafe eek!
         fbc.location_len = (int)strlen(fbc.location);
         fbc.fruit = Bananas;

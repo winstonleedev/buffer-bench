@@ -1,0 +1,14 @@
+//
+// Created by Thanh Phu on 7/1/2019.
+//
+
+#ifndef BUFFER_BENCH_CONFIG_H
+#define BUFFER_BENCH_CONFIG_H
+
+#define BUFSIZE 10000
+#define ITERATIONS 1000
+#define ITERATIONS_OUTER 1000
+
+#endif //BUFFER_BENCH_CONFIG_H
+
+
