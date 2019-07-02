@@ -16,6 +16,10 @@
 
 enum Enum { Apples, Pears, Bananas };
 
+struct ID {
+    int64_t id;
+};
+
 struct Foo {
     int64_t id;
     short count;

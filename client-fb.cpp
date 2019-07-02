@@ -32,7 +32,7 @@ void Run(Bench *bench, const char *name) {
 
     printf("=================================\n");
 
-    const size_t bufsize = BUFSIZE;
+    const size_t bufsize = BUFFER_SIZE;
     char buf[bufsize];
     size_t len = bufsize;
     const int iterations = ITERATIONS;
@@ -96,10 +96,8 @@ int main() {
     InitTime();
 
     std::cout << "Hello, World!" << std::endl;
-    // Bench *NewRAWBench();  Run(NewRAWBench(),  "Raw structs");
-    // Bench *NewFBBench();   Run(NewFBBench(),   "FlatBuffers");
-    Bench *NewPBBench();
-    Run(NewPBBench(), "Protocol Buffers LITE");
+    Bench *NewFBBench();
+    Run(NewFBBench(),   "FlatBuffers");
 
     // getchar();
     return 0;
