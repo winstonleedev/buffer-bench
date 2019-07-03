@@ -9,10 +9,10 @@ fbbench_generated.h: fbbench.fbs
 	flatc --grpc --cpp $<
 
 fbbench_server: server.cpp fbbench.grpc.fb.cc fbbench_generated.h fbbench.grpc.fb.h
-	g++ -std=c++17 -g $(CXXFLAGS) server.cpp fbbench.grpc.fb.cc $(LDFLAGS) -o ../cmake-build-debug/$@
+	g++ -std=c++17 -g $(CXXFLAGS) server.cpp fbbench.grpc.fb.cc $(LDFLAGS) -o $@
 
 fbbench_client: client.cpp fbbench.grpc.fb.cc fbbench_generated.h fbbench.grpc.fb.h
-	g++ -std=c++17 -g $(CXXFLAGS) client.cpp fbbench.grpc.fb.cc $(LDFLAGS) -o ../cmake-build-debug/$@
+	g++ -std=c++17 -g $(CXXFLAGS) client.cpp fbbench.grpc.fb.cc $(LDFLAGS) -o $@
 
 clean:
 	rm fbbench_server

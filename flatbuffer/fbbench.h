@@ -22,11 +22,19 @@ using grpc::Status;
 using namespace benchfb;
 using namespace std;
 
-struct FBBench : Bench {
-    void Encode(void *buf, size_t &len) {
+struct FBBench {
+    int64_t sum;
+
+    virtual ~FBBench() {}
+
+    void Add(int64_t x) {
+        sum += x;
+    }
+
+    flatbuffers::Offset<FooBarContainer> Encode(flatbuffers::FlatBufferBuilder &fbb) {
         const int veclen = 3;
         flatbuffers::Offset<FooBar> vec[veclen];
-        flatbuffers::FlatBufferBuilder fbb;
+
         for (int i = 0; i < veclen; i++) {
             // We add + i to not make these identical copies for a more realistic
             // compression test.
@@ -40,8 +48,7 @@ struct FBBench : Bench {
         auto foobarvec = fbb.CreateVector(vec, veclen);
         auto foobarcontainer = CreateFooBarContainer(fbb, foobarvec, true,
                                                      Enum_Bananas, location);
-        buf = &foobarcontainer;
-        len = sizeof(foobarcontainer);
+        return foobarcontainer;
     }
 
     void *Decode(void *buf, size_t len) { return buf; }
@@ -73,19 +80,19 @@ struct FBBench : Bench {
     void Dealloc(void *decoded) {}
 };
 
-Bench *NewFBBench() {
-    return new FBBench();
-}
-
 // Logic and data behind the server's behavior.
 class FooBarServiceImpl final : public FooBarService::Service {
-    Bench *instance = new FBBench();
+    flatbuffers::grpc::MessageBuilder mb_;
+    FBBench *instance = new FBBench();
 
     Status GetFooBarContainer(ServerContext *context,
                               const flatbuffers::grpc::Message<ID>  *request,
                               flatbuffers::grpc::Message<FooBarContainer> *reply) override {
         size_t len;
-        instance->Encode(reply, len);
+        flatbuffers::Offset<FooBarContainer> createdMessage = instance->Encode(mb_);
+        mb_.Finish(createdMessage);
+        *reply = mb_.ReleaseMessage<FooBarContainer>();
+        assert(reply->Verify());
         return Status::OK;
     }
 };
