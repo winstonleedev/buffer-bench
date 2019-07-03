@@ -77,23 +77,23 @@ Bench *NewFBBench() {
     return new FBBench();
 }
 
+// Logic and data behind the server's behavior.
+class FooBarServiceImpl final : public FooBarService::Service {
+    Bench *instance = new FBBench();
+
+    Status GetFooBarContainer(ServerContext *context,
+                              const flatbuffers::grpc::Message<ID>  *request,
+                              flatbuffers::grpc::Message<FooBarContainer> *reply) override {
+        size_t len;
+        instance->Encode(reply, len);
+        return Status::OK;
+    }
+};
+
 class FBServer: public BenchServer {
     std::unique_ptr<Server> server;
 public:
     FBServer() = default;
-
-    // Logic and data behind the server's behavior.
-    class FooBarServiceImpl final : public FooBarService::Service {
-        Bench *instance = new FBBench();
-
-        Status GetFooBarContainer(ServerContext *context,
-                                  const flatbuffers::grpc::Message<ID>  *request,
-                                  flatbuffers::grpc::Message<FooBarContainer> *reply) override {
-            size_t len;
-            instance->Encode(reply, len);
-            return Status::OK;
-        }
-    };
 
     void StartServer() override {
         std::string server_address(SERVER_ADDRESS_PROTO);

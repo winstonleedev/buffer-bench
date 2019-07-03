@@ -30,45 +30,14 @@ grpc_generate_cpp(GRPC_SRCS GRPC_HDRS ${CMAKE_CURRENT_BINARY_DIR} ${PROTOS})
 
 # compile_flatbuffers_schema_to_cpp(${FLATPROTOS} ${CMAKE_CURRENT_BINARY_DIR} HEADERS_FBS)
 
-add_executable(${PROJECT_NAME}-fb-client
-        flatbuffer/fbbench.cpp
-        flatbuffer/fbbench.grpc.fb.cc
-        flatbuffer/fbbench.grpc.fb.h
-        flatbuffer/fbbench_generated.h
-        client-fb.cpp
-        bench.h
-        config.h flatbuffer/fbbench.h)
-target_include_directories(${PROJECT_NAME}-fb-client
-        PUBLIC
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${GRPC_INCLUDE_DIR}
-        )
-target_link_libraries(${PROJECT_NAME}-fb-client
-        PUBLIC
-        ${ZLIB_LIBRARIES}
-        ${_GRPC_GRPCPP_UNSECURE}
-        flatbuffers
-        )
+add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND MAKE
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer)
 
-add_executable(${PROJECT_NAME}-fb-server
-        flatbuffer/fbbench.cpp
-        flatbuffer/fbbench.grpc.fb.cc
-        flatbuffer/fbbench.grpc.fb.h
-        flatbuffer/fbbench_generated.h
-        server-fb.cpp
-        bench.h
-        config.h flatbuffer/fbbench.h)
-target_include_directories(${PROJECT_NAME}-fb-server
-        PUBLIC
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${GRPC_INCLUDE_DIR}
-        )
-target_link_libraries(${PROJECT_NAME}-fb-server
-        PUBLIC
-        ${ZLIB_LIBRARIES}
-        ${_GRPC_GRPCPP_UNSECURE}
-        flatbuffers
-        )
+add_executable(fbbench_client IMPORTED)
+
+add_executable(fbbench_server IMPORTED)
 
 ########################
 
