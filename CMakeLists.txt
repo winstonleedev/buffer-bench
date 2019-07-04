@@ -91,6 +91,7 @@ target_link_libraries(${PROJECT_NAME}-raw-client
         PUBLIC
         ${ZLIB_LIBRARIES}
         evpp
+        pthread
         )
 
 add_executable(${PROJECT_NAME}-raw-server
@@ -106,4 +107,5 @@ target_link_libraries(${PROJECT_NAME}-raw-server
         PUBLIC
         ${ZLIB_LIBRARIES}
         evpp
+        pthread
         )

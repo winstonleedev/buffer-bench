@@ -9,6 +9,8 @@
 #include <evpp/tcp_client.h>
 #include <evpp/buffer.h>
 #include <evpp/tcp_conn.h>
+#include <mutex>
+#include <condition_variable>
 
 std::chrono::time_point<std::chrono::system_clock> endTime, start;
 
@@ -22,6 +24,55 @@ double SecondsSinceStart() {
     return diff.count();
 }
 
+std::mutex m;
+std::condition_variable cv;
+evpp::Buffer *outgoing;
+evpp::Buffer *incoming;
+bool readyToSend = false;
+bool receivedSomething = false;
+
+class TCPClient {
+    evpp::EventLoop *loopPtr = nullptr;
+
+public:
+    TCPClient() {
+        std::string addr = CLIENT_ACCESS_RAW;
+
+        evpp::EventLoop loop;
+        evpp::TCPClient client(&loop, addr, "TCPPingPongClient");
+
+        client.SetMessageCallback([&loop, &client](const evpp::TCPConnPtr &conn,
+                                                   evpp::Buffer *msg) {
+            receivedSomething = true;
+            incoming = msg;
+            cv.notify_one();
+        });
+
+        client.SetConnectionCallback([](const evpp::TCPConnPtr &conn) {
+            if (conn->IsConnected()) {
+                std::unique_lock<std::mutex> lk(m);
+                cv.wait(lk, [] { return readyToSend; });
+
+                conn->Send(outgoing);
+                readyToSend = false;
+            } else {
+                conn->loop()->Stop();
+                // Error connecting
+                exit(1);
+            }
+        });
+        client.Connect();
+    }
+
+    void Start() {
+        loopPtr->Run();
+    }
+
+    void Stop() {
+        loopPtr->Stop();
+    }
+};
+
 void Run() {
     printf("=================================\n");
 
@@ -29,24 +80,8 @@ void Run() {
     uint64_t total = 0;
     double create = 0, receive = 0, use = 0, free = 0;
 
-    std::string addr = CLIENT_ACCESS_RAW;
-
-    evpp::EventLoop loop;
-    evpp::TCPClient client(&loop, addr, "TCPPingPongClient");
-    client.SetMessageCallback([&loop, &client](const evpp::TCPConnPtr& conn,
-                                               evpp::Buffer* msg) {
-        client.Disconnect();
-    });
-
-    client.SetConnectionCallback([](const evpp::TCPConnPtr& conn) {
-        if (conn->IsConnected()) {
-            conn->Send("hello");
-        } else {
-            conn->loop()->Stop();
-        }
-    });
-    client.Connect();
-    loop.Run();
+    auto client = new TCPClient();
+    std::thread clientThread(bind(&TCPClient::Start, client));
 
     // we use an outer loop also, since bumping up "iterations" to 10000 or so
     // puts so much strain on the allocator that use of free() dwarfs all
@@ -60,10 +95,22 @@ void Run() {
         id.id = 42;
         auto request = new evpp::Buffer();
         request->Append(&id, sizeof(ID));
+        // send data to the worker thread
+        {
+            std::lock_guard<std::mutex> lk(m);
+            outgoing = request;
+            readyToSend = true;
+        }
+        cv.notify_one();
         double time2 = SecondsSinceStart();
 
-        // TODO make TCP client
-        evpp::Buffer * message = nullptr; //client.GetFooBarContainer(id);
+        evpp::Buffer *message = nullptr;
+        // wait for the worker
+        {
+            std::unique_lock<std::mutex> lk(m);
+            cv.wait(lk, []{return receivedSomething;});
+        }
+        message = incoming;
 
         double time3 = SecondsSinceStart();
         auto result = RAWBench::Use(message);
@@ -78,6 +125,8 @@ void Run() {
         use += time4 - time3;
         free += time5 - time4;
     }
+    client->Stop();
+    clientThread.join();
 
     printf("total bytes = %lu\n", total);
     printf("* %f create time\n", create);
