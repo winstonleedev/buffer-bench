@@ -10,6 +10,7 @@
 #include <cstring>
 #include <assert.h>
 #include "../bench.h"
+#include "../config.h"
 
 #define STRING_LENGTH 32
 #define VEC_LENGTH 3
@@ -51,6 +52,8 @@ struct FooBarContainer {
     int location_len;
     char location[STRING_LENGTH];
 };
+
+using namespace std;
 
 struct RAWBench : Bench {
     void Encode(void *buf, size_t &len) {

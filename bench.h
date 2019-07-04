@@ -30,18 +30,11 @@ public:
 };
 
 class BenchServer {
-    std::thread thread;
 
 public:
     BenchServer() = default;
 
     virtual void StartServer() {}
-
-    virtual void ShutdownServer(int signal) {
-        printf("Caught signal %d\n", signal);
-        thread.join();
-        exit(0);
-    }
 };
 
 #endif //FLATBUFFERS_BENCH_BENCH_H

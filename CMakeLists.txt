@@ -17,11 +17,13 @@ find_package(Protobuf)
 find_package(GRPC)
 # find_package(MyFlatC)
 
-include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(${PROTOBUF_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 file(GLOB PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/protobuf/*.proto")
 file(GLOB FLATPROTOS "${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer/*.fbs")
+
+configure_file(/home/thanhphu/Code/grpc/.build/third_party/protobuf/libprotobufd.a ${CMAKE_CURRENT_SOURCE_DIR}/libprotobufd.a COPYONLY)
 
 message("PROTOS=${PROTOS}")
 
@@ -30,14 +32,14 @@ grpc_generate_cpp(GRPC_SRCS GRPC_HDRS ${CMAKE_CURRENT_BINARY_DIR} ${PROTOS})
 
 # compile_flatbuffers_schema_to_cpp(${FLATPROTOS} ${CMAKE_CURRENT_BINARY_DIR} HEADERS_FBS)
 
-add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND MAKE
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer)
-
-add_executable(fbbench_client IMPORTED)
-
-add_executable(fbbench_server IMPORTED)
+#add_custom_command(
+#        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}
+#        COMMAND MAKE
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer)
+#
+#add_executable(fbbench_client IMPORTED)
+#
+#add_executable(fbbench_server IMPORTED)
 
 ########################
 
@@ -56,8 +58,8 @@ target_include_directories(${PROJECT_NAME}-pb-client
 target_link_libraries(${PROJECT_NAME}-pb-client
         PUBLIC
         ${ZLIB_LIBRARIES}
-        ${Protobuf_LIBRARIES}
         ${_GRPC_GRPCPP_UNSECURE}
+        ${PROTOBUF_LIBRARY}
         )
 
 add_executable(${PROJECT_NAME}-pb-server
@@ -75,8 +77,8 @@ target_include_directories(${PROJECT_NAME}-pb-server
 target_link_libraries(${PROJECT_NAME}-pb-server
         PUBLIC
         ${ZLIB_LIBRARIES}
-        ${Protobuf_LIBRARIES}
         ${_GRPC_GRPCPP_UNSECURE}
+        ${PROTOBUF_LIBRARY}
         )
 
 #############################

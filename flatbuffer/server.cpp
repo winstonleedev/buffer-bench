@@ -2,6 +2,7 @@
 #include "fbbench_generated.h"
 
 #include "fbbench.h"
+#include "../config.h"
 #include <grpc++/grpc++.h>
 
 #include <iostream>
@@ -9,7 +10,7 @@
 #include <string>
 
 void RunServer() {
-    std::string server_address("0.0.0.0:50051");
+    std::string server_address(SERVER_ADDRESS_FBS);
     FooBarServiceImpl service;
 
     grpc::ServerBuilder builder;
