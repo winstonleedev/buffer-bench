@@ -5,16 +5,17 @@
 #include <chrono>
 #include <zconf.h>
 #include <zlib.h>
+#include "protobuf/benchpb.h"
 
-std::chrono::time_point<std::chrono::system_clock> end, start;
+std::chrono::time_point<std::chrono::system_clock> endTime, start;
 
 void InitTime() {
     start = std::chrono::system_clock::now();
 }
 
 double SecondsSinceStart() {
-    end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
+    endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = endTime - start;
     return diff.count();
 }
 
@@ -27,8 +28,7 @@ size_t DeflateTest(void *buf, size_t len) {
     return size;
 }
 
-void Run(Bench *bench, const char *name) {
-    bench->Init();
+void Run(PBBench *bench, const char *name) {
 
     printf("=================================\n");
 
@@ -53,7 +53,7 @@ void Run(Bench *bench, const char *name) {
         double time1 = SecondsSinceStart();
         for (int i = 0; i < iterations; i++) {
             len = bufsize;
-            bench->Encode(buf, len);
+            // bench->Encode(buf, len);
         }
         double time2 = SecondsSinceStart();
 
@@ -95,8 +95,6 @@ void Run(Bench *bench, const char *name) {
 int main() {
     InitTime();
 
-    std::cout << "Hello, World!" << std::endl;
-    Bench *NewPBBench();
     Run(NewPBBench(), "Protocol Buffers LITE");
 
     // getchar();

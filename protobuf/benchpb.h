@@ -32,9 +32,16 @@ using grpc::Status;
 using namespace benchpb;
 using namespace std;
 
-struct PBBench : Bench {
-    void Encode(void *buf, size_t &len) override {
-        FooBarContainer fbc;
+struct PBBench {
+    int64_t sum;
+
+    virtual ~PBBench() {}
+
+    void Add(int64_t x) {
+        sum += x;
+    }
+
+    FooBarContainer Encode(FooBarContainer fbc) {
         const int veclen = 3;
         for (int i = 0; i < veclen; i++) {
             auto foobar = fbc.add_list();
@@ -56,17 +63,16 @@ struct PBBench : Bench {
         fbc.set_location("http://google.com/flatbuffers/");
         fbc.set_initialized(true);
         fbc.set_fruit(Bananas);
-        buf = &fbc;
-        len = sizeof(FooBarContainer);
+        return fbc;
     }
 
-    void *Decode(void *buf, size_t len) override {
+    void *Decode(void *buf, size_t len) {
         auto foobarcontainer = new FooBarContainer;
         foobarcontainer->ParseFromArray(buf, (int) len);
         return foobarcontainer;
     }
 
-    int64_t Use(void *decoded) override {
+    int64_t Use(void *decoded) {
         auto foobarcontainer = (FooBarContainer *) decoded;
         sum = 0;
         Add(foobarcontainer->initialized());
@@ -90,13 +96,13 @@ struct PBBench : Bench {
         return sum;
     }
 
-    void Dealloc(void *decoded) override {
+    void Dealloc(void *decoded) {
         delete (FooBarContainer *) decoded;
     }
 
-    void ShutDown() override {
+    void ShutDown() {
         google::protobuf::ShutdownProtobufLibrary();
     }
 };
 
-Bench *NewPBBench() { return new PBBench(); }
+PBBench *NewPBBench() { return new PBBench(); }

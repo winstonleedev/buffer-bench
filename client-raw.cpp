@@ -6,15 +6,15 @@
 #include <zconf.h>
 #include <zlib.h>
 
-std::chrono::time_point<std::chrono::system_clock> end, start;
+std::chrono::time_point<std::chrono::system_clock> endTime, start;
 
 void InitTime() {
     start = std::chrono::system_clock::now();
 }
 
 double SecondsSinceStart() {
-    end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
+    endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = endTime - start;
     return diff.count();
 }
 

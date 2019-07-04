@@ -5,6 +5,7 @@
 
 #include "bench.h"
 #include "config.h"
+#include "protobuf/benchpb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -13,16 +14,14 @@ using grpc::Status;
 
 using namespace benchpb;
 
-Bench *NewPBBench();
-struct PBBench;
-
 // Logic and data behind the server's behavior.
 class FooBarServiceImpl final : public FooBarService::Service {
-    Bench *instance = NewPBBench();
-    Status GetFooBarContainer(ServerContext *context, const ID *request,
+    PBBench *instance = NewPBBench();
+    Status GetFooBarContainer(ServerContext *context,
+                              const ID *request,
                               FooBarContainer *reply) override {
         size_t len;
-        instance->Encode(reply, len);
+        instance->Encode(*reply);
         return Status::OK;
     }
 };

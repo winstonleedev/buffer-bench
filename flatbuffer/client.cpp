@@ -41,7 +41,7 @@ private:
 };
 
 int main(int argc, char **argv) {
-    std::string server_address("localhost:50051");
+    std::string server_address(CLIENT_ACCESS_FBS);
 
     auto channel =
             grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials());

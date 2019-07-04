@@ -23,8 +23,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 file(GLOB PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/protobuf/*.proto")
 file(GLOB FLATPROTOS "${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer/*.fbs")
 
-configure_file(/home/thanhphu/Code/grpc/.build/third_party/protobuf/libprotobufd.a ${CMAKE_CURRENT_SOURCE_DIR}/libprotobufd.a COPYONLY)
-
 message("PROTOS=${PROTOS}")
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTOS})
@@ -44,7 +42,7 @@ grpc_generate_cpp(GRPC_SRCS GRPC_HDRS ${CMAKE_CURRENT_BINARY_DIR} ${PROTOS})
 ########################
 
 add_executable(${PROJECT_NAME}-pb-client
-        protobuf/benchpb.cpp
+        protobuf/benchpb.h
         ${PROTO_SRCS}
         ${GRPC_SRCS}
         client-pb.cpp
@@ -63,7 +61,7 @@ target_link_libraries(${PROJECT_NAME}-pb-client
         )
 
 add_executable(${PROJECT_NAME}-pb-server
-        protobuf/benchpb.cpp
+        protobuf/benchpb.h
         ${PROTO_SRCS}
         ${GRPC_SRCS}
         server-pb.cpp
