@@ -7,6 +7,8 @@
 #include <zlib.h>
 #include "protobuf/benchpb.h"
 
+#include <grpc++/grpc++.h>
+
 std::chrono::time_point<std::chrono::system_clock> endTime, start;
 
 void InitTime() {
@@ -19,83 +21,97 @@ double SecondsSinceStart() {
     return diff.count();
 }
 
-size_t DeflateTest(void *buf, size_t len) {
-    auto outbuf = malloc(len * 2);
-    uLongf size;
-    auto err = compress((Bytef *) outbuf, &size, (Bytef *) buf, (uLong) len);
-    assert(err == Z_OK);
-    free(outbuf);
-    return size;
-}
+class FooBarClient {
+public:
+    explicit FooBarClient(std::shared_ptr<grpc::Channel> channel)
+            : stub_(FooBarService::NewStub(channel)) {}
 
-void Run(PBBench *bench, const char *name) {
+    // Assembles the client's payload, sends it and presents the response back
+    // from the server.
+    FooBarContainer GetFooBarContainer(ID request) {
+
+        // Container for the data we expect from the server.
+        FooBarContainer reply;
+
+        // Context for the client. It could be used to convey extra information to
+        // the server and/or tweak certain RPC behaviors.
+        grpc::ClientContext context;
+
+        // The actual RPC.
+        Status status = stub_->GetFooBarContainer(&context, request, &reply);
+
+        // Act upon its status.
+        if (status.ok()) {
+            return reply;
+        } else {
+            std::cout << status.error_code() << ": " << status.error_message()
+                      << std::endl;
+            return FooBarContainer();
+        }
+    }
+
+private:
+    std::unique_ptr<FooBarService::Stub> stub_;
+};
+
+void Run() {
 
     printf("=================================\n");
 
     const size_t bufsize = BUFFER_SIZE;
     char buf[bufsize];
-    size_t len = bufsize;
-    const int iterations = ITERATIONS;
-    void *decoded[iterations];
 
-    printf("%s bench start...\n", name);
+    printf("%s bench start...\n", "PROTOBUF");
     uint64_t total = 0;
-    double encode = 0, decode = 0, use = 0, dealloc = 0;
+    double create = 0, receive = 0, use = 0, free = 0;
+
+    std::string server_address(CLIENT_ACCESS_PROTO);
+
+    auto channel =
+            grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials());
+    FooBarClient client(channel);
+
+    std::string name("world");
 
     // we use an outer loop also, since bumping up "iterations" to 10000 or so
     // puts so much strain on the allocator that use of free() dwarfs all
     // timings. Running the benchmark in batches gives more realistic timings and
     // keeps it accurate
     for (int j = 0; j < ITERATIONS_OUTER; j++) {
-
+        ID id;
         InitTime();
 
         double time1 = SecondsSinceStart();
-        for (int i = 0; i < iterations; i++) {
-            len = bufsize;
-            // bench->Encode(buf, len);
-        }
+        id.set_id(42);
+
         double time2 = SecondsSinceStart();
+        FooBarContainer message = client.GetFooBarContainer(id);
 
         double time3 = SecondsSinceStart();
-        for (auto &i : decoded) {
-            i = bench->Decode(buf, len);
-        }
+        auto result = PBBench::Use(&message);
+        assert(result == 218812692406581874);
+
         double time4 = SecondsSinceStart();
+        total += result;
 
         double time5 = SecondsSinceStart();
-        for (auto &i : decoded) {
-            auto result = bench->Use(i);
-
-            assert(result == 218812692406581874);
-            total += result;
-        }
-        double time6 = SecondsSinceStart();
-        for (auto &i : decoded) {
-            bench->Dealloc(i);
-        }
-        double time7 = SecondsSinceStart();
-        encode += time2 - time1;
-        decode += time4 - time3;
-        use += time6 - time5;
-        dealloc += time7 - time6;
+        create += time2 - time1;
+        receive += time3 - time2;
+        use += time4 - time3;
+        free += time5 - time4;
     }
-    auto complen = DeflateTest(buf, len);
-    // Ensure none of the code gets optimized out.
-    printf("total = %lu\n", total);
-    printf("%s bench: %lu wire size, %lu compressed wire size\n", name, len, complen);
-    printf("* %f encode time, %f decode time\n", encode, decode);
-    printf("* %f use time, %f dealloc time\n", use, dealloc);
-    printf("* %f decode/use/dealloc\n", decode + use + dealloc);
 
-    bench->ShutDown();
-    delete bench;
+    printf("total bytes = %lu\n", total);
+    printf("* %f create time\n", create);
+    printf("* %f receive time\n", receive);
+    printf("* %f use\n", use);
+    printf("* %f free\n", free);
+    printf("* %f total time\n", create + receive + use + free);
 }
 
 int main() {
     InitTime();
-
-    Run(NewPBBench(), "Protocol Buffers LITE");
+    Run();
 
     // getchar();
     return 0;

@@ -33,15 +33,11 @@ using namespace benchpb;
 using namespace std;
 
 struct PBBench {
-    int64_t sum;
 
-    virtual ~PBBench() {}
+    virtual ~PBBench() = default;
 
-    void Add(int64_t x) {
-        sum += x;
-    }
-
-    FooBarContainer Encode(FooBarContainer fbc) {
+public:
+    static FooBarContainer Encode(FooBarContainer fbc) {
         const int veclen = 3;
         for (int i = 0; i < veclen; i++) {
             auto foobar = fbc.add_list();
@@ -66,42 +62,28 @@ struct PBBench {
         return fbc;
     }
 
-    void *Decode(void *buf, size_t len) {
-        auto foobarcontainer = new FooBarContainer;
-        foobarcontainer->ParseFromArray(buf, (int) len);
-        return foobarcontainer;
-    }
+    static int64_t Use(FooBarContainer *foobarcontainer) {
+        int64_t sum = 0;
 
-    int64_t Use(void *decoded) {
-        auto foobarcontainer = (FooBarContainer *) decoded;
-        sum = 0;
-        Add(foobarcontainer->initialized());
-        Add(foobarcontainer->location().length());
-        Add(foobarcontainer->fruit());
+        sum += (foobarcontainer->initialized());
+        sum += (foobarcontainer->location().length());
+        sum += (foobarcontainer->fruit());
         for (int i = 0; i < foobarcontainer->list().size(); i++) {
             auto &foobar = foobarcontainer->list().Get(i);
-            Add(foobar.name().length());
-            Add(foobar.postfix());
-            Add(static_cast<int64_t>(foobar.rating()));
+            sum += (foobar.name().length());
+            sum += (foobar.postfix());
+            sum += (static_cast<int64_t>(foobar.rating()));
             auto &bar = foobar.sibling();
-            Add(static_cast<int64_t>(bar.ratio()));
-            Add(bar.size());
-            Add(bar.time());
+            sum += (static_cast<int64_t>(bar.ratio()));
+            sum += (bar.size());
+            sum += (bar.time());
             auto &foo = bar.parent();
-            Add(foo.count());
-            Add(foo.id());
-            Add(foo.length());
-            Add(foo.prefix());
+            sum += (foo.count());
+            sum += (foo.id());
+            sum += (foo.length());
+            sum += (foo.prefix());
         }
         return sum;
-    }
-
-    void Dealloc(void *decoded) {
-        delete (FooBarContainer *) decoded;
-    }
-
-    void ShutDown() {
-        google::protobuf::ShutdownProtobufLibrary();
     }
 };
 

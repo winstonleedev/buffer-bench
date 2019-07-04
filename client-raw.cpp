@@ -92,12 +92,56 @@ void Run(Bench *bench, const char *name) {
     delete bench;
 }
 
+void Run() {
+    printf("=================================\n");
+
+    const size_t bufsize = BUFFER_SIZE;
+    char buf[bufsize];
+
+    printf("%s bench start...\n", "RAW");
+    uint64_t total = 0;
+    double create = 0, receive = 0, use = 0, free = 0;
+
+    std::string server_address(CLIENT_ACCESS_PROTO);
+
+    // we use an outer loop also, since bumping up "iterations" to 10000 or so
+    // puts so much strain on the allocator that use of free() dwarfs all
+    // timings. Running the benchmark in batches gives more realistic timings and
+    // keeps it accurate
+    for (int j = 0; j < ITERATIONS_OUTER; j++) {
+        InitTime();
+
+        double time1 = SecondsSinceStart();
+        id.set_id(42);
+
+        double time2 = SecondsSinceStart();
+        FooBarContainer message = client.GetFooBarContainer(id);
+
+        double time3 = SecondsSinceStart();
+        auto result = PBBench::Use(&message);
+        assert(result == 218812692406581874);
+
+        double time4 = SecondsSinceStart();
+        total += result;
+
+        double time5 = SecondsSinceStart();
+        create += time2 - time1;
+        receive += time3 - time2;
+        use += time4 - time3;
+        free += time5 - time4;
+    }
+
+    printf("total bytes = %lu\n", total);
+    printf("* %f create time\n", create);
+    printf("* %f receive time\n", receive);
+    printf("* %f use\n", use);
+    printf("* %f free\n", free);
+    printf("* %f total time\n", create + receive + use + free);
+}
+
 int main() {
     InitTime();
-
-    std::cout << "Hello, World!" << std::endl;
-    Bench *NewRAWBench();
-    Run(NewRAWBench(),  "Raw structs");
+    Run();
 
     // getchar();
     return 0;

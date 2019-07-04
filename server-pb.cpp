@@ -55,7 +55,7 @@ int main() {
 
     auto server = new PBServer();
     server->StartServer();
-
+    google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
 
