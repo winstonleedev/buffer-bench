@@ -57,10 +57,6 @@ private:
 void Run() {
 
     printf("=================================\n");
-
-    const size_t bufsize = BUFFER_SIZE;
-    char buf[bufsize];
-
     printf("%s bench start...\n", "PROTOBUF");
     uint64_t total = 0;
     double create = 0, receive = 0, use = 0, free = 0;

@@ -5,6 +5,10 @@
 #include <chrono>
 #include <zconf.h>
 #include <zlib.h>
+#include "raw/benchraw.h"
+#include <evpp/tcp_client.h>
+#include <evpp/buffer.h>
+#include <evpp/tcp_conn.h>
 
 std::chrono::time_point<std::chrono::system_clock> endTime, start;
 
@@ -18,91 +22,31 @@ double SecondsSinceStart() {
     return diff.count();
 }
 
-size_t DeflateTest(void *buf, size_t len) {
-    auto outbuf = malloc(len * 2);
-    uLongf size;
-    auto err = compress((Bytef *) outbuf, &size, (Bytef *) buf, (uLong) len);
-    assert(err == Z_OK);
-    free(outbuf);
-    return size;
-}
-
-void Run(Bench *bench, const char *name) {
-    bench->Init();
-
-    printf("=================================\n");
-
-    const size_t bufsize = BUFFER_SIZE;
-    char buf[bufsize];
-    size_t len = bufsize;
-    const int iterations = ITERATIONS;
-    void *decoded[iterations];
-
-    printf("%s bench start...\n", name);
-    uint64_t total = 0;
-    double encode = 0, decode = 0, use = 0, dealloc = 0;
-
-    // we use an outer loop also, since bumping up "iterations" to 10000 or so
-    // puts so much strain on the allocator that use of free() dwarfs all
-    // timings. Running the benchmark in batches gives more realistic timings and
-    // keeps it accurate
-    for (int j = 0; j < ITERATIONS_OUTER; j++) {
-
-        InitTime();
-
-        double time1 = SecondsSinceStart();
-        for (int i = 0; i < iterations; i++) {
-            len = bufsize;
-            bench->Encode(buf, len);
-        }
-        double time2 = SecondsSinceStart();
-
-        double time3 = SecondsSinceStart();
-        for (auto &i : decoded) {
-            i = bench->Decode(buf, len);
-        }
-        double time4 = SecondsSinceStart();
-
-        double time5 = SecondsSinceStart();
-        for (auto &i : decoded) {
-            auto result = bench->Use(i);
-
-            assert(result == 218812692406581874);
-            total += result;
-        }
-        double time6 = SecondsSinceStart();
-        for (auto &i : decoded) {
-            bench->Dealloc(i);
-        }
-        double time7 = SecondsSinceStart();
-        encode += time2 - time1;
-        decode += time4 - time3;
-        use += time6 - time5;
-        dealloc += time7 - time6;
-    }
-    auto complen = DeflateTest(buf, len);
-    // Ensure none of the code gets optimized out.
-    printf("total = %lu\n", total);
-    printf("%s bench: %lu wire size, %lu compressed wire size\n", name, len, complen);
-    printf("* %f encode time, %f decode time\n", encode, decode);
-    printf("* %f use time, %f dealloc time\n", use, dealloc);
-    printf("* %f decode/use/dealloc\n", decode + use + dealloc);
-
-    bench->ShutDown();
-    delete bench;
-}
-
 void Run() {
     printf("=================================\n");
-
-    const size_t bufsize = BUFFER_SIZE;
-    char buf[bufsize];
 
     printf("%s bench start...\n", "RAW");
     uint64_t total = 0;
     double create = 0, receive = 0, use = 0, free = 0;
 
-    std::string server_address(CLIENT_ACCESS_PROTO);
+    std::string addr = CLIENT_ACCESS_RAW;
+
+    evpp::EventLoop loop;
+    evpp::TCPClient client(&loop, addr, "TCPPingPongClient");
+    client.SetMessageCallback([&loop, &client](const evpp::TCPConnPtr& conn,
+                                               evpp::Buffer* msg) {
+        client.Disconnect();
+    });
+
+    client.SetConnectionCallback([](const evpp::TCPConnPtr& conn) {
+        if (conn->IsConnected()) {
+            conn->Send("hello");
+        } else {
+            conn->loop()->Stop();
+        }
+    });
+    client.Connect();
+    loop.Run();
 
     // we use an outer loop also, since bumping up "iterations" to 10000 or so
     // puts so much strain on the allocator that use of free() dwarfs all
@@ -112,13 +56,17 @@ void Run() {
         InitTime();
 
         double time1 = SecondsSinceStart();
-        id.set_id(42);
-
+        ID id{};
+        id.id = 42;
+        auto request = new evpp::Buffer();
+        request->Append(&id, sizeof(ID));
         double time2 = SecondsSinceStart();
-        FooBarContainer message = client.GetFooBarContainer(id);
+
+        // TODO make TCP client
+        evpp::Buffer * message = nullptr; //client.GetFooBarContainer(id);
 
         double time3 = SecondsSinceStart();
-        auto result = PBBench::Use(&message);
+        auto result = RAWBench::Use(message);
         assert(result == 218812692406581874);
 
         double time4 = SecondsSinceStart();
@@ -142,8 +90,6 @@ void Run() {
 int main() {
     InitTime();
     Run();
-
-    // getchar();
     return 0;
 }
 

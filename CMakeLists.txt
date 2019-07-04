@@ -7,10 +7,11 @@ set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
 # add_definitions("-DGRPC_USE_PROTO_LITE")
 
 # GRPC and Protocol Buffers libraries location
-list(APPEND CMAKE_PREFIX_PATH "/opt/grpc" "/opt/protobuf")
+list(APPEND CMAKE_PREFIX_PATH "/opt/grpc" "/opt/protobuf" "/opt/protobuf")
 
 # Cmake find modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+list(APPEND LIBRARIES "/usr/lib/x86_64-linux-gnu/libglog.so.0")
 
 find_package(ZLIB)
 find_package(Protobuf)
@@ -82,17 +83,18 @@ target_link_libraries(${PROJECT_NAME}-pb-server
 #############################
 
 add_executable(${PROJECT_NAME}-raw-client
-        raw/benchraw.cpp
+        raw/benchraw.h
         client-raw.cpp
         bench.h
         config.h)
 target_link_libraries(${PROJECT_NAME}-raw-client
         PUBLIC
         ${ZLIB_LIBRARIES}
+        evpp
         )
 
 add_executable(${PROJECT_NAME}-raw-server
-        raw/benchraw.cpp
+        raw/benchraw.h
         server-raw.cpp
         bench.h
         config.h)
@@ -103,4 +105,5 @@ target_include_directories(${PROJECT_NAME}-raw-server
 target_link_libraries(${PROJECT_NAME}-raw-server
         PUBLIC
         ${ZLIB_LIBRARIES}
+        evpp
         )

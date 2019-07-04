@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstring>
 #include <assert.h>
+#include <evpp/buffer.h>
 #include "../bench.h"
 #include "../config.h"
 
@@ -55,8 +56,8 @@ struct FooBarContainer {
 
 using namespace std;
 
-struct RAWBench : Bench {
-    void Encode(void *buf, size_t &len) {
+struct RAWBench {
+    evpp::Buffer* Encode() {
         FooBarContainer fbc{};
         strcpy(fbc.location, "http://google.com/flatbuffers/");  // Unsafe eek!
         fbc.location_len = (int)strlen(fbc.location);
@@ -80,33 +81,32 @@ struct RAWBench : Bench {
             foo.length = 1000000 + i;
             foo.prefix = '@' + i;
         }
-        assert(len >= sizeof(FooBarContainer));
-        len = sizeof(FooBarContainer);
-        memcpy(buf, &fbc, len);
+        auto len = sizeof(FooBarContainer);
+        auto * result = new evpp::Buffer();
+        result->Append(&fbc, len);
+        return result;
     }
 
-    void *Decode(void *buf, size_t len) { return buf; }
-
-    int64_t Use(void *decoded) {
-        auto foobarcontainer = (FooBarContainer *)decoded;
-        sum = 0;
-        Add(foobarcontainer->initialized);
-        Add(foobarcontainer->location_len);
-        Add(foobarcontainer->fruit);
+    static int64_t Use(evpp::Buffer *decoded) {
+        auto foobarcontainer = (FooBarContainer *)decoded->NextAll().data();
+        auto sum = 0;
+        sum += (foobarcontainer->initialized);
+        sum += (foobarcontainer->location_len);
+        sum += (foobarcontainer->fruit);
         for (unsigned int i = 0; i < VEC_LENGTH; i++) {
             auto foobar = &foobarcontainer->list[i];
-            Add(foobar->name_len);
-            Add(foobar->postfix);
-            Add(static_cast<int64_t>(foobar->rating));
+            sum += (foobar->name_len);
+            sum += (foobar->postfix);
+            sum += (static_cast<int64_t>(foobar->rating));
             auto bar = &foobar->sibling;
-            Add(static_cast<int64_t>(bar->ratio));
-            Add(bar->size);
-            Add(bar->time);
+            sum += (static_cast<int64_t>(bar->ratio));
+            sum += (bar->size);
+            sum += (bar->time);
             auto &foo = bar->parent;
-            Add(foo.count);
-            Add(foo.id);
-            Add(foo.length);
-            Add(foo.prefix);
+            sum += (foo.count);
+            sum += (foo.id);
+            sum += (foo.length);
+            sum += (foo.prefix);
         }
         return sum;
     }
@@ -114,4 +114,4 @@ struct RAWBench : Bench {
     void Dealloc(void *decoded) {}
 };
 
-Bench *NewRAWBench() { return new RAWBench(); }
+RAWBench *NewRAWBench() { return new RAWBench(); }
