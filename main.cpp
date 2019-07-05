@@ -115,8 +115,8 @@ int main() {
     InitTime();
 
     std::cout << "Hello, World!" << std::endl;
-    // Bench *NewRAWBench();  Run(NewRAWBench(),  "Raw structs");
-    // Bench *NewFBBench();   Run(NewFBBench(),   "FlatBuffers");
+    Bench *NewRAWBench();  Run(NewRAWBench(),  "Raw structs");
+    Bench *NewFBBench();   Run(NewFBBench(),   "FlatBuffers");
     Bench *NewPBBench();   Run(NewPBBench(),   "Protocol Buffers LITE");
 
     // getchar();
