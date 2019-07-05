@@ -44,13 +44,11 @@ void Run() {
     uint64_t total = 0;
     double create = 0, receive = 0, use = 0, free = 0;
 
-    std::string server_address(CLIENT_ACCESS_PROTO);
+    std::string server_address(CLIENT_ACCESS_FBS);
 
     auto channel =
             grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials());
     FooBarClient client(channel);
-
-    grpc::ClientContext context;
 
     // we use an outer loop also, since bumping up "iterations" to 10000 or so
     // puts so much strain on the allocator that use of free() dwarfs all
@@ -58,6 +56,7 @@ void Run() {
     // keeps it accurate
     for (int j = 0; j < ITERATIONS_OUTER; j++) {
         flatbuffers::grpc::MessageBuilder mb;
+        grpc::ClientContext context;
         InitTime();
 
         double time1 = SecondsSinceStart();
