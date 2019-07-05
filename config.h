@@ -10,8 +10,8 @@
 #define ITERATIONS_OUTER 1000
 
 #define CLIENT_ACCESS_FBS "localhost:50050"
-#define CLIENT_ACCESS_PROTO "localhost:50050"
-#define CLIENT_ACCESS_RAW "localhost:50050"
+#define CLIENT_ACCESS_PROTO "localhost:50051"
+#define CLIENT_ACCESS_RAW "localhost:50052"
 
 #define SERVER_ADDRESS_FBS "0.0.0.0:50050"
 #define SERVER_ADDRESS_PROTO "0.0.0.0:50051"
